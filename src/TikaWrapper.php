@@ -8,11 +8,14 @@ use SplFileInfo;
 class TikaWrapper {
 
     protected $timeout = 60;
+    protected $timeoutIdle = false;
 
     public function __construct(array $config = [])
     {
         if(isset($config['timeout']))
             $this->timeout = $config['timeout'];
+        if(isset($config['timeoutIdle']))
+            $this->timeoutIdle = $config['timeoutIdle'];
     }
 
     /**
@@ -101,12 +104,14 @@ class TikaWrapper {
      * @param int $timeout
      * @return string
      */
-    private function run($option, $fileName, $timeout = 60){
+    private function run($option, $fileName){
         $file = new SplFileInfo($fileName);
         $tikaPath = __DIR__ . "/../vendor/";
         $shellCommand = 'java -jar tika-app-1.12.jar ' . $option . ' "' . $file->getRealPath() . '"';
 
-        $process = new Process($shellCommand, null, null, null, $timeout);
+        $process = new Process($shellCommand, null, null, null, ($this->timeoutIdle ? null : $this->timeout));
+        if($this->timeoutIdle)
+            $process->setIdleTimeout($this->timeout);
         $process->setWorkingDirectory($tikaPath);
         $process->run();
 
